@@ -56,6 +56,9 @@ export function SiteHeader() {
                             </Button>
                         </SignedOut>
                         <SignedIn>
+                            <Button variant="ghost" asChild>
+                                <Link href="/dashboard">Dashboard</Link>
+                            </Button>
                             <UserButton />
                         </SignedIn>
                         <ModeToggle />
