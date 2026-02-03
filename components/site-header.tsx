@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Button } from "@/components/ui/button"
 import { Mountain } from "lucide-react"
+import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 export function SiteHeader() {
     return (
@@ -46,12 +47,17 @@ export function SiteHeader() {
                         {/* Mobile Nav Trigger could go here */}
                     </div>
                     <nav className="flex items-center gap-2">
-                        <Button variant="ghost" asChild className="hidden sm:inline-flex">
-                            <Link href="#">Log in</Link>
-                        </Button>
-                        <Button size="sm" asChild>
-                            <Link href="#">Get Started</Link>
-                        </Button>
+                        <SignedOut>
+                            <Button variant="ghost" asChild className="hidden sm:inline-flex">
+                                <Link href="/sign-in">Log in</Link>
+                            </Button>
+                            <Button size="sm" asChild>
+                                <Link href="/sign-up">Get Started</Link>
+                            </Button>
+                        </SignedOut>
+                        <SignedIn>
+                            <UserButton />
+                        </SignedIn>
                         <ModeToggle />
                     </nav>
                 </div>

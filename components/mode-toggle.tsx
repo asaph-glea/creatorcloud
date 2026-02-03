@@ -37,7 +37,7 @@ export function ModeToggle() {
                     Dark
                     {theme === "dark" && <Check className="ml-auto h-4 w-4" />}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")}>
+                {/* <DropdownMenuItem onClick={() => setTheme("system")}>
                     <Monitor className="mr-2 h-4 w-4" />
                     System
                     {theme === "system" && <Check className="ml-auto h-4 w-4" />}
@@ -46,7 +46,7 @@ export function ModeToggle() {
                     <div className="mr-2 h-4 w-4 rounded-full bg-primary" />
                     Brand
                     {theme === "brand" && <Check className="ml-auto h-4 w-4" />}
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
             </DropdownMenuContent>
         </DropdownMenu>
     )
