@@ -6,6 +6,7 @@ export type NicheType = "available" | "custom"
 
 export interface CreateSeriesData {
     // Step 1: Niche
+    id?: string
     nicheType: NicheType
     selectedNiche: string
     customNiche: string
@@ -37,7 +38,7 @@ interface CreateSeriesContextType {
 
 const CreateSeriesContext = createContext<CreateSeriesContextType | undefined>(undefined)
 
-export function CreateSeriesProvider({ children }: { children: React.ReactNode }) {
+export function CreateSeriesProvider({ children, initialData }: { children: React.ReactNode, initialData?: Partial<CreateSeriesData> }) {
     const [currentStep, setCurrentStep] = useState(1)
     const [data, setData] = useState<CreateSeriesData>({
         nicheType: "available",
@@ -53,6 +54,7 @@ export function CreateSeriesProvider({ children }: { children: React.ReactNode }
         videoDuration: "",
         platform: "",
         publishTime: undefined,
+        ...initialData
     })
 
     const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 6))

@@ -1,7 +1,6 @@
 "use client"
 
 import { useCreateSeries } from "@/app/dashboard/create/context"
-import { CreateFooter } from "@/components/create/create-footer"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Card } from "@/components/ui/card"
@@ -12,7 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SOCIAL_PLATFORMS, VIDEO_DURATIONS } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import { format, setHours, setMinutes } from "date-fns"
-import { CalendarIcon, Instagram, Mail, Music2, Pin, Twitter, Youtube } from "lucide-react"
+import { CalendarIcon, Instagram, Loader2, Mail, Music2, Pin, Twitter, Youtube } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { toast } from "sonner"
 
 const iconMap = {
     Youtube: Youtube,
@@ -24,15 +26,48 @@ const iconMap = {
 }
 
 export function StepDetails() {
-    const { data, setData, nextStep, prevStep } = useCreateSeries()
+    const { data, setData, prevStep } = useCreateSeries()
+    const router = useRouter()
+    const [isLoading, setIsLoading] = useState(false)
 
-    const isNextDisabled = !data.seriesName || !data.videoDuration || !data.platform || !data.publishTime
+    const isNextDisabled = !data.seriesName || !data.videoDuration || !data.platform || !data.publishTime || isLoading
 
-    const handleSchedule = () => {
-        // Here you would typically submit the form
-        console.log("Scheduling series:", data)
-        // For now, we can show a success message or redirect
-        alert("Series scheduled successfully!")
+    const handleSchedule = async () => {
+        setIsLoading(true)
+        try {
+            // Prepare payload
+            // Note: File upload for customMusic is not implemented in this step yet
+            // You would typically upload the file to storage first and get a URL
+            const payload = {
+                ...data,
+                customMusic: undefined, // Don't send File object
+                customMusicUrl: null, // Placeholder for url
+            }
+
+            const url = data.id ? "/api/series" : "/api/series/create" // PATCH on /api/series handles updates
+            const method = data.id ? "PATCH" : "POST"
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            })
+
+            if (!response.ok) {
+                const error = await response.json()
+                throw new Error(error.error || "Failed to schedule series")
+            }
+
+            toast.success(data.id ? "Series updated successfully!" : "Series scheduled successfully!")
+            router.push("/dashboard")
+        } catch (error) {
+            console.error("Error scheduling series:", error)
+            toast.error(error instanceof Error ? error.message : "Something went wrong")
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     const setTime = (type: "hour" | "minute" | "period", value: string) => {
@@ -91,6 +126,7 @@ export function StepDetails() {
                         placeholder="e.g. Daily Meditation, Tech News..."
                         value={data.seriesName}
                         onChange={(e) => setData(prev => ({ ...prev, seriesName: e.target.value }))}
+                        disabled={isLoading}
                     />
                 </div>
 
@@ -99,6 +135,7 @@ export function StepDetails() {
                     <Select
                         value={data.videoDuration}
                         onValueChange={(value) => setData(prev => ({ ...prev, videoDuration: value }))}
+                        disabled={isLoading}
                     >
                         <SelectTrigger>
                             <SelectValue placeholder="Select duration" />
@@ -125,9 +162,10 @@ export function StepDetails() {
                                         "flex flex-col items-center justify-center p-4 cursor-pointer transition-all hover:bg-muted/50",
                                         data.platform === platform.id
                                             ? "border-primary ring-1 ring-primary"
-                                            : ""
+                                            : "",
+                                        isLoading && "opacity-50 pointer-events-none"
                                     )}
-                                    onClick={() => setData(prev => ({ ...prev, platform: platform.id }))}
+                                    onClick={() => !isLoading && setData(prev => ({ ...prev, platform: platform.id }))}
                                 >
                                     <Icon className="h-6 w-6 mb-2" />
                                     <span className="text-xs font-medium">{platform.name}</span>
@@ -147,6 +185,7 @@ export function StepDetails() {
                                     "w-full justify-start text-left font-normal",
                                     !data.publishTime && "text-muted-foreground"
                                 )}
+                                disabled={isLoading}
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
                                 {data.publishTime ? format(data.publishTime, "PPP p") : <span>Pick a date</span>}
@@ -164,7 +203,7 @@ export function StepDetails() {
 
                     <div className="flex gap-2 mt-2">
                         <Select
-                            disabled={!data.publishTime}
+                            disabled={!data.publishTime || isLoading}
                             value={hour}
                             onValueChange={(val) => setTime("hour", val)}
                         >
@@ -181,7 +220,7 @@ export function StepDetails() {
                         </Select>
 
                         <Select
-                            disabled={!data.publishTime}
+                            disabled={!data.publishTime || isLoading}
                             value={minute}
                             onValueChange={(val) => setTime("minute", val)}
                         >
@@ -198,7 +237,7 @@ export function StepDetails() {
                         </Select>
 
                         <Select
-                            disabled={!data.publishTime}
+                            disabled={!data.publishTime || isLoading}
                             value={period}
                             onValueChange={(val) => setTime("period", val)}
                         >
@@ -221,6 +260,7 @@ export function StepDetails() {
                 <Button
                     variant="ghost"
                     onClick={prevStep}
+                    disabled={isLoading}
                 >
                     Back
                 </Button>
@@ -229,7 +269,8 @@ export function StepDetails() {
                     disabled={isNextDisabled}
                     className="ml-auto"
                 >
-                    Schedule Series
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {data.id ? "Update Series" : "Schedule Series"}
                 </Button>
             </div>
         </div >
