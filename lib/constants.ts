@@ -169,3 +169,90 @@ export const MUSIC_TRACKS = [
         filename: "Aylex - inspire.mp3"
     }
 ]
+
+export const VIDEO_STYLES = [
+    {
+        id: "3d-render",
+        name: "3D Render",
+        image: "/video-style/3d-render.png"
+    },
+    {
+        id: "anime",
+        name: "Anime",
+        image: "/video-style/anime.png"
+    },
+    {
+        id: "cinematic",
+        name: "Cinematic",
+        image: "/video-style/cinematic.png"
+    },
+    {
+        id: "cyberpunk",
+        name: "Cyberpunk",
+        image: "/video-style/cyberpunk.png"
+    },
+    {
+        id: "gta",
+        name: "GTA Style",
+        image: "/video-style/gta.png"
+    },
+    {
+        id: "realistic",
+        name: "Realistic",
+        image: "/video-style/realistic.png"
+    }
+]
+
+export const CAPTION_STYLES = [
+    {
+        id: "classic",
+        name: "Classic",
+        description: "Timeless and clear",
+        className: "font-sans font-bold text-white drop-shadow-md"
+    },
+    {
+        id: "pop",
+        name: "Pop",
+        description: "Bold and colorful",
+        className: "font-extrabold text-yellow-400 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] stroke-black stroke-2"
+    },
+    {
+        id: "typewriter",
+        name: "Typewriter",
+        description: "Retro mechanical feel",
+        className: "font-mono font-medium text-green-400 bg-black/80 p-1"
+    },
+    {
+        id: "karaoke",
+        name: "Karaoke",
+        description: "Sing along style",
+        className: "font-bold text-blue-300 drop-shadow-glow"
+    },
+    {
+        id: "neon",
+        name: "Neon",
+        description: "Cyberpunk visuals",
+        className: "font-bold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-violet-500 drop-shadow-[0_0_10px_rgba(168,85,247,0.5)]"
+    },
+    {
+        id: "minimal",
+        name: "Minimal",
+        description: "Clean and modern",
+        className: "font-light tracking-widest uppercase text-white bg-black/40 px-2"
+    }
+]
+
+export const VIDEO_DURATIONS = [
+    { value: "10-20", label: "10-20 seconds" },
+    { value: "20-30", label: "20-30 seconds" },
+    { value: "40-50", label: "40-50 seconds" }
+]
+
+export const SOCIAL_PLATFORMS = [
+    { id: "youtube", name: "YouTube", icon: "Youtube" },
+    { id: "tiktok", name: "TikTok", icon: "Music2" }, // Using Music2 as a placeholder for TikTok
+    { id: "instagram", name: "Instagram", icon: "Instagram" },
+    { id: "twitter", name: "Twitter", icon: "Twitter" },
+    { id: "pinterest", name: "Pinterest", icon: "Pin" },
+    { id: "email", name: "Email", icon: "Mail" }
+]

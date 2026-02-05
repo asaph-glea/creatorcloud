@@ -5,6 +5,9 @@ import { Stepper } from "@/components/create/stepper"
 import { StepNiche } from "@/components/create/steps/niche/step-niche"
 import { StepLanguage } from "@/components/create/steps/language/step-language"
 import { StepMusic } from "@/components/create/steps/music/step-music"
+import { StepVideo } from "@/components/create/steps/video/step-video"
+import { StepCaption } from "@/components/create/steps/caption/step-caption"
+import { StepDetails } from "@/components/create/steps/details/step-details"
 
 function CreateWizard() {
     const { currentStep } = useCreateSeries()
@@ -17,12 +20,9 @@ function CreateWizard() {
                 {currentStep === 1 && <StepNiche />}
                 {currentStep === 2 && <StepLanguage />}
                 {currentStep === 3 && <StepMusic />}
-                {currentStep === 4 && (
-                    <div className="text-center py-20">
-                        <h2 className="text-xl font-semibold">Step 4: Style & Tone</h2>
-                        <p className="text-muted-foreground">Coming soon...</p>
-                    </div>
-                )}
+                {currentStep === 4 && <StepVideo />}
+                {currentStep === 5 && <StepCaption />}
+                {currentStep === 6 && <StepDetails />}
                 {/* Placeholder for future steps */}
             </div>
         </div>

@@ -15,6 +15,15 @@ export interface CreateSeriesData {
     // Step 3: Music
     music: string // ID of the selected track
     customMusic: File | null
+    // Step 4: Video Style
+    videoStyle: string
+    // Step 5: Caption Style
+    captionStyle: string
+    // Step 6: Series Details
+    seriesName: string
+    videoDuration: string
+    platform: string
+    publishTime: Date | undefined
 }
 
 interface CreateSeriesContextType {
@@ -38,6 +47,12 @@ export function CreateSeriesProvider({ children }: { children: React.ReactNode }
         voice: "",
         music: "",
         customMusic: null,
+        videoStyle: "",
+        captionStyle: "",
+        seriesName: "",
+        videoDuration: "",
+        platform: "",
+        publishTime: undefined,
     })
 
     const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 6))
