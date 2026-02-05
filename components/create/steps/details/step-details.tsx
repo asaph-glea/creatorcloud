@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SOCIAL_PLATFORMS, VIDEO_DURATIONS } from "@/lib/constants"
 import { cn } from "@/lib/utils"
-import { format } from "date-fns"
+import { format, setHours, setMinutes } from "date-fns"
 import { CalendarIcon, Instagram, Mail, Music2, Pin, Twitter, Youtube } from "lucide-react"
 
 const iconMap = {
@@ -34,6 +34,45 @@ export function StepDetails() {
         // For now, we can show a success message or redirect
         alert("Series scheduled successfully!")
     }
+
+    const setTime = (type: "hour" | "minute" | "period", value: string) => {
+        if (!data.publishTime) return
+
+        const date = new Date(data.publishTime)
+        let hours = date.getHours()
+        let minutes = date.getMinutes()
+
+        if (type === "hour") {
+            const currentPeriod = hours >= 12 ? "PM" : "AM"
+            let newHour = parseInt(value)
+            if (currentPeriod === "PM" && newHour !== 12) newHour += 12
+            if (currentPeriod === "AM" && newHour === 12) newHour = 0
+            hours = newHour
+        } else if (type === "minute") {
+            minutes = parseInt(value)
+        } else if (type === "period") {
+            if (value === "PM" && hours < 12) hours += 12
+            if (value === "AM" && hours >= 12) hours -= 12
+        }
+
+        const newDate = setMinutes(setHours(date, hours), minutes)
+        setData(prev => ({ ...prev, publishTime: newDate }))
+    }
+
+    const getTimeValues = () => {
+        if (!data.publishTime) return { hour: "12", minute: "00", period: "AM" }
+        const date = data.publishTime
+        let hours = date.getHours()
+        const minutes = date.getMinutes().toString().padStart(2, "0")
+        const period = hours >= 12 ? "PM" : "AM"
+
+        if (hours > 12) hours -= 12
+        if (hours === 0) hours = 12
+
+        return { hour: hours.toString(), minute: minutes, period }
+    }
+
+    const { hour, minute, period } = getTimeValues()
 
     return (
         <div className="flex flex-col h-full max-w-2xl mx-auto">
@@ -110,7 +149,7 @@ export function StepDetails() {
                                 )}
                             >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {data.publishTime ? format(data.publishTime, "PPP") : <span>Pick a date</span>}
+                                {data.publishTime ? format(data.publishTime, "PPP p") : <span>Pick a date</span>}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -122,6 +161,56 @@ export function StepDetails() {
                             />
                         </PopoverContent>
                     </Popover>
+
+                    <div className="flex gap-2 mt-2">
+                        <Select
+                            disabled={!data.publishTime}
+                            value={hour}
+                            onValueChange={(val) => setTime("hour", val)}
+                        >
+                            <SelectTrigger className="w-[80px]">
+                                <SelectValue placeholder="Hour" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                                    <SelectItem key={h} value={h.toString()}>
+                                        {h}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select
+                            disabled={!data.publishTime}
+                            value={minute}
+                            onValueChange={(val) => setTime("minute", val)}
+                        >
+                            <SelectTrigger className="w-[80px]">
+                                <SelectValue placeholder="Min" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Array.from({ length: 12 }, (_, i) => i * 5).map((m) => (
+                                    <SelectItem key={m} value={m.toString().padStart(2, "0")}>
+                                        {m.toString().padStart(2, "0")}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select
+                            disabled={!data.publishTime}
+                            value={period}
+                            onValueChange={(val) => setTime("period", val)}
+                        >
+                            <SelectTrigger className="w-[80px]">
+                                <SelectValue placeholder="AM/PM" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="AM">AM</SelectItem>
+                                <SelectItem value="PM">PM</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <p className="text-xs text-muted-foreground mt-1">
                         Video will generate 3-6 hours before the video is published.
                     </p>
@@ -143,6 +232,6 @@ export function StepDetails() {
                     Schedule Series
                 </Button>
             </div>
-        </div>
+        </div >
     )
 }
