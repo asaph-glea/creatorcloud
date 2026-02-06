@@ -127,31 +127,55 @@ export const generateVideo = inngest.createFunction(
             return { imageUrls };
         });
 
-        // Step 6: Save to Database
+        // Step 6: Save to Database (Update existing record)
         const savedVideo = await step.run("save-to-db", async () => {
             const supabase = createClient(
                 process.env.NEXT_PUBLIC_SUPABASE_URL!,
                 process.env.SUPABASE_SERVICE_ROLE_KEY!
             );
 
-            const { data, error } = await supabase
-                .from("videos")
-                .insert({
-                    series_id: seriesId,
-                    user_id: series.user_id,
-                    script: script,
-                    audio_url: audio.audioUrl,
-                    voice_model: "aura-asteria-en", // TODO: Making dynamic based on series settings
-                    captions: captions.captions,
-                    image_urls: images.imageUrls,
-                    status: 'completed'
-                })
-                .select()
-                .single();
+            // Check if we received a videoId to update
+            const videoId = event.data.videoId;
+            const usedVoiceModel = "aura-asteria-en";
 
-            if (error) throw new Error(`Failed to save video to database: ${error.message}`);
+            if (videoId) {
+                // Update existing 'processing' record
+                const { data, error } = await supabase
+                    .from("videos")
+                    .update({
+                        script: script,
+                        audio_url: audio.audioUrl,
+                        voice_model: usedVoiceModel,
+                        captions: captions.captions,
+                        image_urls: images.imageUrls,
+                        status: 'completed'
+                    })
+                    .eq("id", videoId)
+                    .select()
+                    .single();
 
-            return data;
+                if (error) throw new Error(`Failed to update video: ${error.message}`);
+                return data;
+            } else {
+                // Fallback: Insert new record (legacy flow or if ID missing)
+                const { data, error } = await supabase
+                    .from("videos")
+                    .insert({
+                        series_id: seriesId,
+                        user_id: series.user_id,
+                        script: script,
+                        audio_url: audio.audioUrl,
+                        voice_model: usedVoiceModel,
+                        captions: captions.captions,
+                        image_urls: images.imageUrls,
+                        status: 'completed'
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw new Error(`Failed to insert video: ${error.message}`);
+                return data;
+            }
         });
 
         return { success: true, videoId: savedVideo.id };

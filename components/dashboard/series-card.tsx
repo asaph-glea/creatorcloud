@@ -9,6 +9,7 @@ import { VIDEO_STYLES } from "@/lib/constants"
 import { Edit2, MoreVertical, Pause, Play, Trash, Video } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
 
@@ -64,10 +65,21 @@ export function SeriesCard({ series, onDelete }: SeriesCardProps) {
 
     // ... inside component
 
+    const router = useRouter() // Ensure imports!
+
     const handleGenerate = async () => {
-        toast.promise(triggerVideoGeneration(series.id), {
-            loading: "Triggering generation...",
-            success: "Video generation started!",
+        const promise = triggerVideoGeneration(series.id);
+
+        toast.promise(promise, {
+            loading: "Starting generation...",
+            success: (data) => {
+                if (data.success) {
+                    router.push("/dashboard/videos");
+                    return "Generation started! Redirecting..."
+                } else {
+                    throw new Error(data.error)
+                }
+            },
             error: "Failed to start generation",
         })
     }
