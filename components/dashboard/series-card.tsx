@@ -1,5 +1,7 @@
 "use client"
 
+import { triggerVideoGeneration } from "@/app/actions/video-actions"
+
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -58,8 +60,16 @@ export function SeriesCard({ series, onDelete }: SeriesCardProps) {
         onDelete(series.id)
     }
 
-    const handleGenerate = () => {
-        toast.info("Triggered video generation for " + series.series_name)
+
+
+    // ... inside component
+
+    const handleGenerate = async () => {
+        toast.promise(triggerVideoGeneration(series.id), {
+            loading: "Triggering generation...",
+            success: "Video generation started!",
+            error: "Failed to start generation",
+        })
     }
 
     const handleViewVideos = () => {
