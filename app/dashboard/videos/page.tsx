@@ -26,6 +26,7 @@ export default async function VideosPage() {
             status,
             created_at,
             image_urls,
+            video_url,
             voice_model,
             series:series_id (
                 series_name,
@@ -42,10 +43,16 @@ export default async function VideosPage() {
         return <div>Error loading videos.</div>;
     }
 
+    // Transform data if series comes back as an array
+    const formattedVideos = (videos || []).map((video: any) => ({
+        ...video,
+        series: Array.isArray(video.series) ? video.series[0] : video.series,
+    }));
+
     return (
         <div className="p-6 space-y-6">
             <h1 className="text-3xl font-bold">My Videos</h1>
-            <VideoList initialVideos={videos || []} />
+            <VideoList initialVideos={formattedVideos as any} />
         </div>
     );
 }

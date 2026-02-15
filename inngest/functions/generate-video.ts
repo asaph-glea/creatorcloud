@@ -127,6 +127,62 @@ export const generateVideo = inngest.createFunction(
             return { imageUrls };
         });
 
+        // Step 8: Render Video
+        const renderResult = await step.run("render-video", async () => {
+            const renderServiceUrl = process.env.NEXT_PUBLIC_RENDER_SERVICE_URL;
+
+            if (!renderServiceUrl) {
+                console.warn("RENDER_SERVICE_URL not found. Skipping video rendering.");
+                return { videoUrl: null };
+            }
+
+            console.log("Starting render with service:", renderServiceUrl);
+
+            const inputProps = {
+                audioUrl: audio.audioUrl,
+                imageUrls: images.imageUrls,
+                captions: captions.captions,
+                script: script.script
+            };
+
+            const compositionId = "MyComp"; // Make sure this matches your composition ID in src/remotion/index.ts
+            const outputBucket = "series-assets"; // Using the same bucket as other assets
+            const outputKey = `${seriesId}/video-${Date.now()}.mp4`;
+
+            try {
+                const response = await fetch(`${renderServiceUrl}/render`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        inputProps,
+                        compositionId,
+                        outputBucket,
+                        outputKey
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Render service failed: ${response.status} ${response.statusText} - ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.success || !data.url) {
+                    throw new Error(`Render service returned invalid response: ${JSON.stringify(data)}`);
+                }
+
+                console.log("Render completed:", data.url);
+                return { videoUrl: data.url };
+
+            } catch (err: any) {
+                console.error("Render failed", err);
+                throw err;
+            }
+        });
+
         // Step 6: Save to Database (Update existing record)
         const savedVideo = await step.run("save-to-db", async () => {
             const supabase = createClient(
@@ -138,6 +194,9 @@ export const generateVideo = inngest.createFunction(
             const videoId = event.data.videoId;
             const usedVoiceModel = "aura-asteria-en";
 
+            // Use rendered video URL if available, else first image as fallback (or null)
+            const videoPath = renderResult.videoUrl;
+
             if (videoId) {
                 // Update existing 'processing' record
                 const { data, error } = await supabase
@@ -148,7 +207,8 @@ export const generateVideo = inngest.createFunction(
                         voice_model: usedVoiceModel,
                         captions: captions.captions,
                         image_urls: images.imageUrls,
-                        status: 'completed'
+                        video_url: videoPath,
+                        status: videoPath ? 'completed' : 'failed' // or 'draft' if render failed but assets generated
                     })
                     .eq("id", videoId)
                     .select()
@@ -168,7 +228,8 @@ export const generateVideo = inngest.createFunction(
                         voice_model: usedVoiceModel,
                         captions: captions.captions,
                         image_urls: images.imageUrls,
-                        status: 'completed'
+                        video_url: videoPath,
+                        status: videoPath ? 'completed' : 'failed'
                     })
                     .select()
                     .single();
