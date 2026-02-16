@@ -18,7 +18,7 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
 
-app.post('/render', async (req, res) => {
+app.post('/render', async (req: express.Request, res: express.Response) => {
     try {
         const { inputProps, compositionId, outputBucket, outputKey } = req.body;
 
@@ -30,7 +30,7 @@ app.post('/render', async (req, res) => {
 
         // Bundle the project
         // Assuming the entry point is at src/remotion/index.ts (standard Next.js Remotion setup)
-        const entryPoint = path.join(process.cwd(), 'src', 'remotion', 'index.ts');
+        const entryPoint = path.join(process.cwd(), 'remotion', 'index.ts');
 
         console.log('Bundling project...');
         const bundled = await bundle({

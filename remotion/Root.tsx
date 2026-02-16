@@ -4,7 +4,7 @@ import { MyComposition, CompositionProps } from './Composition';
 export const RemotionRoot: React.FC = () => {
     return (
         <>
-            <Composition<CompositionProps, any>
+            <Composition
                 id="MyComp"
                 component={MyComposition}
                 durationInFrames={300}
