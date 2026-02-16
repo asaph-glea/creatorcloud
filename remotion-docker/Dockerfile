@@ -29,11 +29,11 @@ COPY . .
 # For simplicity in this setup, we'll use ts-node via npx or similar
 # Better practice: build the server.ts to js. 
 # Let's install ts-node globally or use npx
-RUN npm install -g ts-node typescript
+# Install tsx for running TypeScript directly
+RUN npm install -g tsx
 
 # Expose port
 EXPOSE 8080
 
 # Start command
-# Adjust this to point to your server file
-CMD ["npx", "ts-node", "remotion-docker/server.ts"]
+CMD ["tsx", "remotion-docker/server.ts"]
