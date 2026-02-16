@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+.next
+out
+build
+coverage
+*.log
+.DS_Store
+.env*
+gcp-sa-key.json
+*-key.json

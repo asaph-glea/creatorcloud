@@ -37,7 +37,8 @@ $roles = @(
     "roles/storage.admin",
     "roles/iam.serviceAccountUser",
     "roles/artifactregistry.writer",
-    "roles/cloudbuild.builds.editor"
+    "roles/cloudbuild.builds.editor",
+    "roles/viewer"
 )
 
 foreach ($role in $roles) {
@@ -45,11 +46,14 @@ foreach ($role in $roles) {
 }
 
 # Generate Key
-Write-Host "Generating Key..."
 if (Test-Path $KEY_FILE) {
-    Remove-Item $KEY_FILE
+    Write-Host "Key file $KEY_FILE already exists. Skipping key generation to avoid updating secrets."
+    Write-Host "If you need a new key, delete $KEY_FILE and run this script again."
 }
-gcloud iam service-accounts keys create $KEY_FILE --iam-account $SERVICE_ACCOUNT_EMAIL --project $PROJECT_ID
+else {
+    Write-Host "Generating Key..."
+    gcloud iam service-accounts keys create $KEY_FILE --iam-account $SERVICE_ACCOUNT_EMAIL --project $PROJECT_ID
+}
 
 Write-Host "---------------------------------------------------"
 Write-Host "SETUP COMPLETE!"
