@@ -9,6 +9,7 @@ import express from 'express';
 import { bundle } from '@remotion/bundler';
 import { renderMedia, selectComposition } from '@remotion/renderer';
 import { createClient } from '@supabase/supabase-js';
+import { Storage } from '@google-cloud/storage';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -20,10 +21,18 @@ const PORT = process.env.PORT || 8080;
 
 app.post('/render', async (req: express.Request, res: express.Response) => {
     try {
-        const { inputProps, compositionId, outputBucket, outputKey } = req.body;
+        const { inputProps, compositionId, outputBucket, outputKey, outputProvider } = req.body;
 
-        if (!inputProps || !compositionId || !outputBucket || !outputKey) {
+        if (!inputProps || !compositionId || !outputKey) {
             return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        // Default to GCS if GCS_BUCKET is set and no outputBucket provided, or if provider explicitly set
+        const useGcs = outputProvider === 'gcs' || (!outputBucket && process.env.GCS_BUCKET);
+        const targetBucket = outputBucket || process.env.GCS_BUCKET;
+
+        if (!targetBucket) {
+            return res.status(400).json({ error: 'No output bucket specified' });
         }
 
         console.log(`Starting render for composition: ${compositionId}`);
@@ -63,41 +72,60 @@ app.post('/render', async (req: express.Request, res: express.Response) => {
             },
         });
 
-        console.log('Render complete. Uploading to Supabase...');
+        console.log(`Render complete. Uploading to ${useGcs ? 'GCS' : 'Supabase'}...`);
 
-        // Upload to Supabase
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (useGcs) {
+            // Upload to Google Cloud Storage
+            const storage = new Storage();
+            const bucket = storage.bucket(targetBucket);
 
-        if (!supabaseUrl || !supabaseKey) {
-            throw new Error('Missing Supabase credentials');
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseKey);
-        const fileContent = fs.readFileSync(outputFile);
-
-        const { data, error } = await supabase.storage
-            .from(outputBucket)
-            .upload(outputKey, fileContent, {
-                contentType: 'video/mp4',
-                upsert: true,
+            await bucket.upload(outputFile, {
+                destination: outputKey,
+                public: true, // Make public by default? adjustable
             });
 
-        // Clean up temp file
-        fs.unlinkSync(outputFile);
+            // Clean up temp file
+            fs.unlinkSync(outputFile);
 
-        if (error) {
-            throw new Error(`Supabase upload failed: ${error.message}`);
+            const publicUrl = `https://storage.googleapis.com/${targetBucket}/${outputKey}`;
+            console.log(`Upload complete: ${publicUrl}`);
+            res.json({ success: true, url: publicUrl });
+
+        } else {
+            // Upload to Supabase
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+            const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+            if (!supabaseUrl || !supabaseKey) {
+                throw new Error('Missing Supabase credentials');
+            }
+
+            const supabase = createClient(supabaseUrl, supabaseKey);
+            const fileContent = fs.readFileSync(outputFile);
+
+            const { data, error } = await supabase.storage
+                .from(targetBucket)
+                .upload(outputKey, fileContent, {
+                    contentType: 'video/mp4',
+                    upsert: true,
+                });
+
+            // Clean up temp file
+            fs.unlinkSync(outputFile);
+
+            if (error) {
+                throw new Error(`Supabase upload failed: ${error.message}`);
+            }
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from(targetBucket)
+                .getPublicUrl(outputKey);
+
+            console.log(`Upload complete: ${publicUrl}`);
+
+            res.json({ success: true, url: publicUrl });
         }
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-            .from(outputBucket)
-            .getPublicUrl(outputKey);
-
-        console.log(`Upload complete: ${publicUrl}`);
-
-        res.json({ success: true, url: publicUrl });
 
     } catch (error: any) {
         console.error('Render failed:', error);
