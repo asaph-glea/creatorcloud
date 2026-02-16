@@ -159,7 +159,8 @@ export const generateVideo = inngest.createFunction(
                         inputProps,
                         compositionId,
                         outputBucket,
-                        outputKey
+                        outputKey,
+                        outputProvider: 'gcs'
                     }),
                 });
 

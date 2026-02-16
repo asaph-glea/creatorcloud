@@ -24,7 +24,7 @@ Write-Host "Using Project ID: $PROJECT_ID"
 
 # Enable APIs
 Write-Host "Enabling APIs..."
-gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com storage.googleapis.com --project $PROJECT_ID
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com storage.googleapis.com cloudresourcemanager.googleapis.com serviceusage.googleapis.com --project $PROJECT_ID
 
 # Create Service Account
 Write-Host "Creating Service Account..."
