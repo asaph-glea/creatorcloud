@@ -243,9 +243,9 @@ export const CAPTION_STYLES = [
 ]
 
 export const VIDEO_DURATIONS = [
-    { value: "10-20", label: "10-20 seconds" },
     { value: "20-30", label: "20-30 seconds" },
-    { value: "40-50", label: "40-50 seconds" }
+    { value: "40-50", label: "40-50 seconds" },
+    { value: "50-60", label: "50-60 seconds" }
 ]
 
 export const SOCIAL_PLATFORMS = [

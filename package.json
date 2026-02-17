@@ -15,6 +15,7 @@
     "@google-cloud/storage": "^7.19.0",
     "@google/genai": "^1.40.0",
     "@hookform/resolvers": "^5.2.2",
+    "@plunk/node": "^3.0.3",
     "@remotion/bundler": "4.0.422",
     "@remotion/lambda": "4.0.422",
     "@remotion/renderer": "4.0.422",

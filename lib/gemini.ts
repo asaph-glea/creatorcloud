@@ -18,12 +18,16 @@ export async function generateVideoScript(params: GenerateScriptParams) {
     }
 
     // Determine prompt count based on duration
-    let promptCount = "1-2";
-    const duration = params.videoDuration || "10-20s";
-    if (duration === "20-30s") promptCount = "2-3";
-    if (duration === "30-40s") promptCount = "3-4";
-    if (duration === "40-50s") promptCount = "4-5";
-    if (duration === "50-60s") promptCount = "5-6";
+    let promptCount = "2-3";
+    const duration = params.videoDuration || "20-30";
+
+    // Normalize duration string (remove 's' suffix if present just in case)
+    const normalizedDuration = duration.replace(/s$/, "");
+
+    if (normalizedDuration === "20-30") promptCount = "2-3";
+    if (normalizedDuration === "30-40") promptCount = "3-4";
+    if (normalizedDuration === "40-50") promptCount = "4-5";
+    if (normalizedDuration === "50-60") promptCount = "5-6";
 
     const prompt = `
     Create a viral short video script for a series named "${params.seriesName}".
@@ -45,6 +49,12 @@ export async function generateVideoScript(params: GenerateScriptParams) {
     
     Make sure the script fits the time limit.
     Make the image prompts highly detailed, describing style, lighting, and composition matching the "${params.videoStyle}" style.
+    
+    IMPORTANT SAFETY GUIDELINES:
+    - The image prompts MUST BE SAFE FOR WORK (SFW).
+    - Do NOT include any sexual, violent, gory, or harmful content in the image prompts.
+    - If a scene implies violence or adult themes, describe it abstractly or focus on safe elements (e.g., "shadowy figure", "tense atmosphere") without explicit details.
+    - Ensure all prompts comply with standard safety policies.
   `;
 
     try {

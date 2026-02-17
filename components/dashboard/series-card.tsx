@@ -1,12 +1,14 @@
 "use client"
 
 import { triggerVideoGeneration } from "@/app/actions/video-actions"
+import { triggerPublishWorkflow } from "@/app/actions/publish-actions"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { VIDEO_STYLES } from "@/lib/constants"
-import { Edit2, MoreVertical, Pause, Play, Trash, Video } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { CloudUpload, Edit2, MoreVertical, Pause, Play, Trash, Video } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -19,7 +21,9 @@ export interface Series {
     series_name: string
     video_style: string
     niche_type: string
-    status?: "active" | "paused" // Assuming this field exists or we simulate it
+    status?: "active" | "paused"
+    publish_time?: string
+    platform?: string[]
 }
 
 interface SeriesCardProps {
@@ -29,11 +33,11 @@ interface SeriesCardProps {
 
 export function SeriesCard({ series, onDelete }: SeriesCardProps) {
     const [isPaused, setIsPaused] = useState(series.status === "paused")
+    const router = useRouter()
 
     // Find the video style image
     const style = VIDEO_STYLES.find(s => s.id === series.video_style)
     const imageSrc = style?.image || "/video-style/realistic.png" // Fallback
-
 
     const handlePauseToggle = async () => {
         const newStatus = isPaused ? "active" : "paused"
@@ -61,11 +65,14 @@ export function SeriesCard({ series, onDelete }: SeriesCardProps) {
         onDelete(series.id)
     }
 
-
-
-    // ... inside component
-
-    const router = useRouter() // Ensure imports!
+    const handleTestPublish = async () => {
+        const promise = triggerPublishWorkflow(series.id);
+        toast.promise(promise, {
+            loading: "Triggering publish workflow...",
+            success: "Workflow started! Check Inngest.",
+            error: "Failed to trigger workflow",
+        })
+    }
 
     const handleGenerate = async () => {
         const promise = triggerVideoGeneration(series.id);
@@ -89,38 +96,27 @@ export function SeriesCard({ series, onDelete }: SeriesCardProps) {
     }
 
     return (
-        <Card className="overflow-hidden group relative flex flex-col">
-            {/* Thumbnail */}
-            <div className="relative aspect-video w-full bg-muted">
+        <Card className="p-0 gap-0 overflow-hidden group relative flex flex-col h-full hover:shadow-lg transition-shadow duration-300">
+            {/* Thumbnail - Vertical Aspect Ratio for Shorts/Reels */}
+            <div className="relative aspect-[4/5] w-full bg-muted border-b">
                 <Image
                     src={imageSrc}
                     alt={series.series_name}
                     fill
-                    className="object-cover transition-transform group-hover:scale-105"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
 
-                {/* Top Right Edit Button */}
-                <Link href={`/dashboard/create?edit=${series.id}`} className="absolute top-2 right-2 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-colors opacity-0 group-hover:opacity-100">
-                    <Edit2 className="h-4 w-4" />
-                </Link>
-            </div>
+                {/* Status Badge */}
+                <div className="absolute top-3 left-3 flex gap-2 z-10">
+                    {isPaused && <Badge variant="destructive" className="shadow-sm">Paused</Badge>}
+                </div>
 
-            {/* Content */}
-            <div className="p-4 flex flex-col flex-1">
-                <div className="flex justify-between items-start mb-2">
-                    <div>
-                        <h3 className="font-semibold truncate pr-2" title={series.series_name}>
-                            {series.series_name}
-                        </h3>
-                        <p className="text-xs text-muted-foreground capitalize">
-                            {style?.name || series.video_style} • {series.niche_type}
-                        </p>
-                    </div>
-
+                {/* Top Right Actions */}
+                <div className="absolute top-2 right-2 flex flex-col gap-2 z-10">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
+                            <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full bg-black/40 hover:bg-black/60 text-white border-none backdrop-blur-md">
                                 <MoreVertical className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
@@ -141,21 +137,54 @@ export function SeriesCard({ series, onDelete }: SeriesCardProps) {
                     </DropdownMenu>
                 </div>
 
-                <div className="mt-auto pt-4 flex gap-2">
+                {/* Title Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10">
+                    <h3 className="font-bold text-lg leading-tight truncate px-1 drop-shadow-md" title={series.series_name}>
+                        {series.series_name}
+                    </h3>
+                </div>
+            </div>
+
+            {/* Content & Actions */}
+            <div className="p-4 flex flex-col flex-1 gap-4">
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2">
+                    <Badge variant="secondary" className="px-2 py-0.5 text-xs font-normal">
+                        {style?.name || series.video_style}
+                    </Badge>
+                    <Badge variant="outline" className="px-2 py-0.5 text-xs font-normal">
+                        {series.niche_type}
+                    </Badge>
+                </div>
+
+                <div className="mt-auto flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            className="w-full text-xs"
+                            onClick={handleViewVideos}
+                        >
+                            <Video className="mr-2 h-3.5 w-3.5" /> Videos
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            className="w-full text-xs bg-primary hover:bg-primary/90"
+                            onClick={handleGenerate}
+                        >
+                            <span className="mr-1">⚡</span> Generate
+                        </Button>
+                    </div>
+
                     <Button
-                        variant="secondary"
+                        variant="ghost"
                         size="sm"
-                        className="flex-1 text-xs"
-                        onClick={handleViewVideos}
+                        className="w-full text-xs text-muted-foreground hover:text-foreground h-8"
+                        onClick={handleTestPublish}
+                        title="Test Publish Workflow"
                     >
-                        <Video className="mr-2 h-3 w-3" /> View Videos
-                    </Button>
-                    <Button
-                        size="sm"
-                        className="flex-1 text-xs"
-                        onClick={handleGenerate}
-                    >
-                        Generate
+                        <CloudUpload className="mr-2 h-3.5 w-3.5" /> Test Publish
                     </Button>
                 </div>
             </div>

@@ -21,7 +21,7 @@ const PORT = process.env.PORT || 8080;
 
 app.post('/render', async (req: express.Request, res: express.Response) => {
     try {
-        const { inputProps, compositionId, outputBucket, outputKey, outputProvider } = req.body;
+        const { inputProps, compositionId, outputBucket, outputKey, outputProvider, durationInFrames } = req.body;
 
         if (!inputProps || !compositionId || !outputKey) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -55,13 +55,19 @@ app.post('/render', async (req: express.Request, res: express.Response) => {
             inputProps,
         });
 
+        // Determine duration
+        const finalDurationInFrames = durationInFrames || composition.durationInFrames;
+
         // Create a temporary file for the output
         const tmpDir = os.tmpdir();
         const outputFile = path.join(tmpDir, `out-${Date.now()}.mp4`);
 
         console.log('Rendering video...');
         await renderMedia({
-            composition,
+            composition: {
+                ...composition,
+                durationInFrames: finalDurationInFrames, // Override duration
+            },
             serveUrl: bundled,
             codec: 'h264',
             outputLocation: outputFile,

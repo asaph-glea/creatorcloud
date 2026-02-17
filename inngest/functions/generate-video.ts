@@ -102,8 +102,38 @@ export const generateVideo = inngest.createFunction(
             const prompts = Array.isArray(script.image_prompts) ? script.image_prompts : [];
 
             for (let i = 0; i < prompts.length; i++) {
-                const prompt = prompts[i];
-                const imageBuffer = await generateImage({ prompt });
+                let prompt = prompts[i];
+
+                // Handle case where LLM returns object instead of string
+                if (typeof prompt === 'object' && prompt !== null) {
+                    console.warn(`Warning: Image prompt at index ${i} is an object:`, prompt);
+                    // @ts-ignore
+                    prompt = prompt.image_prompt || prompt.prompt || prompt.text || JSON.stringify(prompt);
+                }
+
+                // Ensure it's a string
+                prompt = String(prompt);
+
+                console.log(`DEBUG: Generating image ${i} with prompt:`, prompt);
+                let imageBuffer: Buffer;
+                try {
+                    imageBuffer = await generateImage({ prompt });
+                } catch (error: any) {
+                    console.error(`Error generating image ${i} with prompt "${prompt}":`, error.message);
+                    // Fallback to a safe prompt if generation fails (e.g. NSFW)
+                    console.log("Attempting fallback generation with safe prompt...");
+                    try {
+                        imageBuffer = await generateImage({ prompt: `A cinematic abstract background, safe for work, high quality.` });
+                    } catch (fallbackError) {
+                        console.error("Fallback generation failed:", fallbackError);
+                        // Skip this image or throw? 
+                        // For now, let's create a tiny transparent pixel or similar? 
+                        // No, let's just skip this image in the array if possible, but that might break sync.
+                        // Better to use a placeholder image URL if available, but we need a buffer.
+                        // Let's rethrow if fallback fails, it might be a connectivity issue.
+                        throw fallbackError;
+                    }
+                }
                 const fileName = `${seriesId}/image-${i}-${Date.now()}.png`;
 
                 const { error: uploadError } = await supabase.storage
@@ -146,8 +176,20 @@ export const generateVideo = inngest.createFunction(
             };
 
             const compositionId = "MyComp"; // Make sure this matches your composition ID in src/remotion/index.ts
-            const outputBucket = "series-assets"; // Using the same bucket as other assets
+            const outputBucket = "creatorcloud-renders"; // GCS bucket for video output
             const outputKey = `${seriesId}/video-${Date.now()}.mp4`;
+
+            // Calculate duration from captions
+            // Default to 10s (300 frames) if no captions
+            let durationInFrames = 300;
+            if (captions.captions && captions.captions.length > 0) {
+                const lastCaption = captions.captions[captions.captions.length - 1];
+                const durationInSeconds = lastCaption.end;
+                // Add 2 seconds buffer for smooth ending
+                durationInFrames = Math.ceil((durationInSeconds + 2) * 30);
+            }
+
+            console.log(`Calculated duration: ${durationInFrames} frames (~${Math.round(durationInFrames / 30)}s)`);
 
             try {
                 const response = await fetch(`${renderServiceUrl}/render`, {
@@ -160,7 +202,8 @@ export const generateVideo = inngest.createFunction(
                         compositionId,
                         outputBucket,
                         outputKey,
-                        outputProvider: 'gcs'
+                        outputProvider: 'gcs',
+                        durationInFrames
                     }),
                 });
 
@@ -237,6 +280,75 @@ export const generateVideo = inngest.createFunction(
 
                 if (error) throw new Error(`Failed to insert video: ${error.message}`);
                 return data;
+            }
+        });
+
+        // Step 7: Send Notification Email
+        await step.run("send-notification-email", async () => {
+            console.log("DEBUG: Starting send-notification-email step");
+            console.log("DEBUG: Video URL:", savedVideo.video_url);
+
+            if (event.data.skipNotification) {
+                console.log("DEBUG: Skipping email notification as requested by event.");
+                return { status: "skipped", reason: "skipNotification flag set" };
+            }
+
+            if (!savedVideo.video_url) {
+                console.warn("No video URL generated, skipping email notification.");
+                return { status: "skipped", reason: "No videoURL" };
+            }
+
+            const { plunk } = await import("@/lib/plunk");
+            console.log("DEBUG: Plunk client initialized:", !!plunk);
+
+            if (!plunk) {
+                console.warn("Plunk client not initialized, skipping email.");
+                return { status: "skipped", reason: "Plunk client missing (check PLUNK_API_KEY)" };
+            }
+
+            const { generateVideoNotificationEmail } = await import("@/lib/email-helpers");
+
+            const supabase = createClient(
+                process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                process.env.SUPABASE_SERVICE_ROLE_KEY!
+            );
+
+            console.log("DEBUG: Fetching user for series.user_id:", series.user_id);
+
+            // Fetch user email
+            const { data: user, error: userError } = await supabase
+                .from("users")
+                .select("email, name")
+                .eq("id", series.user_id)
+                .single();
+
+            console.log("DEBUG: User fetch result:", user);
+            if (userError) console.error("DEBUG: User fetch error:", userError);
+
+            if (userError || !user || !user.email) {
+                console.error("Failed to fetch user email for notification. User:", user, "Error:", userError);
+                return { status: "failed", reason: "User email not found", error: userError };
+            }
+
+            const emailHtml = generateVideoNotificationEmail({
+                userName: user.name || "Creator",
+                videoTitle: script.title || "Your New Video",
+                videoUrl: savedVideo.video_url,
+                thumbnailUrl: images.imageUrls?.[0],
+                seriesName: series.series_name,
+            });
+
+            try {
+                const result = await plunk.emails.send({
+                    to: user.email,
+                    subject: `Your video "${script.title || 'Video'}" is ready! 🎬`,
+                    body: emailHtml,
+                });
+                console.log(`Notification email sent to ${user.email}. Result:`, result);
+                return { status: "sent", recipient: user.email, result };
+            } catch (emailError: any) {
+                console.error("Failed to send notification email:", emailError);
+                return { status: "error", error: emailError.message };
             }
         });
 
