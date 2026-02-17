@@ -17,44 +17,47 @@ export async function generateVideoScript(params: GenerateScriptParams) {
         throw new Error("GEMINI_API_KEY is not set");
     }
 
-    // Determine prompt count based on duration
-    let promptCount = "2-3";
+    // Determine constraints based on duration
+    let promptCount = 3;
+    let minWords = 50;
+    let maxWords = 80;
     const duration = params.videoDuration || "20-30";
-
-    // Normalize duration string (remove 's' suffix if present just in case)
     const normalizedDuration = duration.replace(/s$/, "");
 
-    if (normalizedDuration === "20-30") promptCount = "2-3";
-    if (normalizedDuration === "30-40") promptCount = "3-4";
-    if (normalizedDuration === "40-50") promptCount = "4-5";
-    if (normalizedDuration === "50-60") promptCount = "5-6";
+    // Avg speaking rate ~140 wpm. 
+    if (normalizedDuration === "20-30") { promptCount = 4; minWords = 50; maxWords = 75; }
+    if (normalizedDuration === "30-40") { promptCount = 5; minWords = 75; maxWords = 100; }
+    if (normalizedDuration === "40-50") { promptCount = 7; minWords = 100; maxWords = 125; }
+    if (normalizedDuration === "50-60") { promptCount = 9; minWords = 125; maxWords = 150; }
 
     const prompt = `
-    Create a viral short video script for a series named "${params.seriesName}".
-    Niche: ${params.nicheType} ${params.selectedNiche ? `(${params.selectedNiche})` : ""} ${params.customNiche ? `(${params.customNiche})` : ""}.
+    You are an expert viral video scriptwriter. Create a script for a video series named "${params.seriesName}".
+    
+    Target Audience/Niche: ${params.nicheType} ${params.selectedNiche ? `(${params.selectedNiche})` : ""} ${params.customNiche ? `(${params.customNiche})` : ""}.
     Video Style: ${params.videoStyle}.
-    Target Duration: ${duration}.
+    Target Duration: ${duration} seconds.
+    Target Word Count: ${minWords} - ${maxWords} words.
+    
+    STRICT REQUIREMENTS:
+    1.  **Word Count**: The spoken script MUST be between ${minWords} and ${maxWords} words. Do NOT generate a script shorter than ${minWords} words.
+    2.  **Structure**: The script MUST have a clear beginning (Hook), middle (Body), and end (Conclusion/Call to Action). It must NOT end abruptly.
+    3.  **Visuals**: Provide EXACTLY ${promptCount} distinct image prompts that align with the flow of the story.
     
     Strictly return VALID JSON only. No markdown formatting. No code blocks.
-    Structure:
+    JSON Structure:
     {
       "title": "Viral catchy title",
-      "script": "The full spoken script for the voiceover. Natural, engaging tone.",
+      "script": "The full spoken script. Plain text, no scene markers in this string.",
       "image_prompts": [
-        "Detailed AI image prompt for scene 1",
-        "Detailed AI image prompt for scene 2"
-        ... (${promptCount} prompts)
+        "Visual description for scene 1",
+        "Visual description for scene 2",
+        ...
       ]
     }
     
-    Make sure the script fits the time limit.
-    Make the image prompts highly detailed, describing style, lighting, and composition matching the "${params.videoStyle}" style.
-    
     IMPORTANT SAFETY GUIDELINES:
     - The image prompts MUST BE SAFE FOR WORK (SFW).
-    - Do NOT include any sexual, violent, gory, or harmful content in the image prompts.
-    - If a scene implies violence or adult themes, describe it abstractly or focus on safe elements (e.g., "shadowy figure", "tense atmosphere") without explicit details.
-    - Ensure all prompts comply with standard safety policies.
+    - Do NOT include any sexual, violent, gory, or harmful content.
   `;
 
     try {

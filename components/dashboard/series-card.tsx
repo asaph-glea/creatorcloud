@@ -184,7 +184,7 @@ export function SeriesCard({ series, onDelete }: SeriesCardProps) {
                         onClick={handleTestPublish}
                         title="Test Publish Workflow"
                     >
-                        <CloudUpload className="mr-2 h-3.5 w-3.5" /> Test Publish
+                        <CloudUpload className="mr-2 h-3.5 w-3.5" /> Execute Full workflow
                     </Button>
                 </div>
             </div>
