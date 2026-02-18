@@ -59,7 +59,7 @@ export function VideoList({ initialVideos }: VideoListProps) {
                                             src={thumbnail}
                                             alt={video.series?.series_name || "Video"}
                                             fill
-                                            className="object-cover transition-transform group-hover:scale-105"
+                                            className="object-cover object-top transition-transform group-hover:scale-105"
                                             unoptimized
                                         />
                                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">

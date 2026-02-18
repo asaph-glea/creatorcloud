@@ -126,6 +126,11 @@ export function SeriesCard({ series, onDelete }: SeriesCardProps) {
                                     <Edit2 className="mr-2 h-4 w-4" /> Edit Series
                                 </Link>
                             </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/create-custom?seriesId=${series.id}&seriesName=${encodeURIComponent(series.series_name)}`} className="cursor-pointer">
+                                    <Video className="mr-2 h-4 w-4" /> Custom Video
+                                </Link>
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={handlePauseToggle} className="cursor-pointer">
                                 {isPaused ? <Play className="mr-2 h-4 w-4" /> : <Pause className="mr-2 h-4 w-4" />}
                                 {isPaused ? "Resume Series" : "Pause Series"}
@@ -168,14 +173,24 @@ export function SeriesCard({ series, onDelete }: SeriesCardProps) {
                             <Video className="mr-2 h-3.5 w-3.5" /> Videos
                         </Button>
 
-                        <Button
-                            size="sm"
-                            className="w-full text-xs bg-primary hover:bg-primary/90"
-                            onClick={handleGenerate}
-                        >
-                            <span className="mr-1">⚡</span> Generate
-                        </Button>
+                        <Link href={`/dashboard/create-custom?seriesId=${series.id}&seriesName=${encodeURIComponent(series.series_name)}`} className="w-full">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full text-xs"
+                            >
+                                <Video className="mr-2 h-3.5 w-3.5" /> Custom
+                            </Button>
+                        </Link>
                     </div>
+
+                    <Button
+                        size="sm"
+                        className="w-full text-xs bg-primary hover:bg-primary/90"
+                        onClick={handleGenerate}
+                    >
+                        <span className="mr-1">⚡</span> Auto Generate
+                    </Button>
 
                     <Button
                         variant="ghost"

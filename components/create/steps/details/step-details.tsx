@@ -196,6 +196,7 @@ export function StepDetails() {
                                 mode="single"
                                 selected={data.publishTime}
                                 onSelect={(date) => setData(prev => ({ ...prev, publishTime: date }))}
+                                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                                 initialFocus
                             />
                         </PopoverContent>

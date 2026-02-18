@@ -39,7 +39,7 @@ app.post('/render', async (req: express.Request, res: express.Response) => {
 
         // Bundle the project
         // Assuming the entry point is at src/remotion/index.ts (standard Next.js Remotion setup)
-        const entryPoint = path.join(process.cwd(), 'remotion', 'index.ts');
+        const entryPoint = path.join(process.cwd(), 'my-remotion', 'index.ts');
 
         console.log('Bundling project...');
         const bundled = await bundle({

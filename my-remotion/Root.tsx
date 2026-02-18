@@ -1,3 +1,5 @@
+"use client";
+
 import { Composition } from 'remotion';
 import { MyComposition, CompositionProps } from './Composition';
 

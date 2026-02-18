@@ -18,6 +18,7 @@
     "@plunk/node": "^3.0.3",
     "@remotion/bundler": "4.0.422",
     "@remotion/lambda": "4.0.422",
+    "@remotion/player": "4.0.422",
     "@remotion/renderer": "4.0.422",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.3",

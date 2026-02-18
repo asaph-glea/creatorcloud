@@ -20,19 +20,52 @@ export async function generateImage({ prompt }: GenerateImageParams): Promise<Bu
         height: 576, // 16:9 aspect ratio or close to it
     };
 
-    const output = await replicate.run(model, { input });
+    let attempts = 0;
+    const maxAttempts = 5;
 
-    // Replicate returns an array of URLs or output strings
-    // @ts-ignore
-    const imageUrl = Array.isArray(output) ? output[0] : output;
+    while (attempts < maxAttempts) {
+        try {
+            const output = await replicate.run(model, { input });
 
-    if (!imageUrl) {
-        throw new Error("Failed to generate image from Replicate");
+            // Replicate returns an array of URLs or output strings
+            // @ts-ignore
+            const imageUrl = Array.isArray(output) ? output[0] : output;
+
+            if (!imageUrl) {
+                throw new Error("Failed to generate image from Replicate - empty output");
+            }
+
+            // Fetch the image to return as buffer
+            const imageResponse = await fetch(imageUrl);
+            if (!imageResponse.ok) {
+                throw new Error(`Failed to fetch image from URL: ${imageResponse.statusText}`);
+            }
+            const arrayBuffer = await imageResponse.arrayBuffer();
+
+            return Buffer.from(arrayBuffer);
+
+        } catch (error: any) {
+            attempts++;
+            const isRateLimit = error?.message?.includes("429") ||
+                error?.status === 429 ||
+                error?.response?.status === 429;
+
+            if (isRateLimit && attempts < maxAttempts) {
+                // Exponential backoff: 2s, 4s, 8s, 16s
+                const waitTime = 2000 * Math.pow(2, attempts - 1);
+                console.warn(`[Replicate] Rate limited (429). Retrying attempt ${attempts}/${maxAttempts} in ${waitTime}ms...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+                continue;
+            }
+
+            if (attempts >= maxAttempts) {
+                console.error(`[Replicate] Max retries (${maxAttempts}) exceeded.`);
+                throw error;
+            }
+
+            // If it's not a rate limit error, throw immediately (or maybe retry on 500s too? keeping it simple for now)
+            throw error;
+        }
     }
-
-    // Fetch the image to return as buffer
-    const imageResponse = await fetch(imageUrl);
-    const arrayBuffer = await imageResponse.arrayBuffer();
-
-    return Buffer.from(arrayBuffer);
+    throw new Error("Unexpected end of retry loop");
 }

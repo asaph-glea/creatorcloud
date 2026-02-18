@@ -1,4 +1,7 @@
 import { Inngest } from "inngest";
 
 // Create a client to send and receive events
-export const inngest = new Inngest({ id: "creatorcloud" });
+export const inngest = new Inngest({
+    id: "creatorcloud",
+    baseUrl: process.env.NODE_ENV === "development" ? "http://127.0.0.1:8288" : undefined
+});

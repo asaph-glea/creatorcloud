@@ -84,3 +84,31 @@ export async function generateVideoScript(params: GenerateScriptParams) {
         throw new Error(`Failed to generate video script: ${error.message}`);
     }
 }
+
+export async function generateText(prompt: string): Promise<string> {
+    if (!client) {
+        throw new Error("GEMINI_API_KEY is not set");
+    }
+
+    try {
+        const result = await client.models.generateContent({
+            model: "gemini-2.5-pro",
+            contents: prompt,
+        });
+
+        // Handle response extraction similar to above
+        const text = typeof result.text === 'function' ? result.text() : result.text;
+
+        if (text) return text;
+
+        // Fallback
+        const part = result.candidates?.[0]?.content?.parts?.[0];
+        if (part?.text) return part.text;
+
+        throw new Error("No text returned from Gemini");
+
+    } catch (error: any) {
+        console.error("Gemini Generate Text Error:", error);
+        throw new Error(`Failed to generate text: ${error.message}`);
+    }
+}

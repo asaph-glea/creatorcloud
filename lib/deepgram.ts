@@ -14,25 +14,47 @@ export async function generateVoiceover({ text, model = "aura-asteria-en" }: Gen
         throw new Error("DEEPGRAM_API_KEY is not set");
     }
 
-    // Deepgram Aura (TTS) 
-    // Ref: https://developers.deepgram.com/docs/text-to-speech
-    const response = await deepgram.speak.request(
-        { text },
-        {
-            model: model,
-            encoding: "mp3",
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+        try {
+            // Deepgram Aura (TTS) 
+            // Ref: https://developers.deepgram.com/docs/text-to-speech
+            const response = await deepgram.speak.request(
+                { text },
+                {
+                    model: model,
+                    encoding: "mp3",
+                }
+            );
+
+            const stream = await response.getStream();
+
+            if (!stream) {
+                throw new Error("Failed to generate audio stream from Deepgram");
+            }
+
+            // Convert Web ReadableStream to Buffer
+            const buffer = await streamToBuffer(stream);
+            return buffer;
+
+        } catch (error: any) {
+            attempts++;
+            console.warn(`[Deepgram] Generate Voice attempt ${attempts}/${maxAttempts} failed: ${error.message}`);
+
+            if (attempts >= maxAttempts) {
+                console.error("[Deepgram] All attempts failed.");
+                throw error;
+            }
+
+            // Exponential backoff: 1s, 2s, 4s
+            const waitTime = 1000 * Math.pow(2, attempts - 1);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
         }
-    );
-
-    const stream = await response.getStream();
-
-    if (!stream) {
-        throw new Error("Failed to generate audio stream from Deepgram");
     }
 
-    // Convert Web ReadableStream to Buffer
-    const buffer = await streamToBuffer(stream);
-    return buffer;
+    throw new Error("Deepgram generation failed after retries");
 }
 
 // Helper to convert stream to buffer

@@ -1,3 +1,5 @@
+"use client";
+
 import { AbsoluteFill, Audio, Img, useCurrentFrame, useVideoConfig, Sequence, interpolate, spring } from 'remotion';
 import React, { useMemo } from 'react';
 
@@ -6,12 +8,13 @@ import React, { useMemo } from 'react';
 
 export interface CompositionProps {
     audioUrl: string;
+    musicUrl?: string;
     imageUrls: string[];
     captions: any[]; // Adjust type based on Deepgram output
     script?: string;
 }
 
-export const MyComposition: React.FC<CompositionProps> = ({ audioUrl, imageUrls, captions }) => {
+export const MyComposition: React.FC<CompositionProps> = ({ audioUrl, musicUrl, imageUrls, captions }) => {
     const { fps, durationInFrames } = useVideoConfig();
     const frame = useCurrentFrame();
 
@@ -48,7 +51,10 @@ export const MyComposition: React.FC<CompositionProps> = ({ audioUrl, imageUrls,
 
     return (
         <AbsoluteFill className="bg-black">
-            {/* Audio Track */}
+            {/* Background Music */}
+            {musicUrl && <Audio src={musicUrl} loop volume={0.2} />}
+
+            {/* Voiceover */}
             {audioUrl && <Audio src={audioUrl} />}
 
             {/* Images Sequence */}

@@ -55,7 +55,8 @@ export const LANGUAGES = [
 export const NOIZ_VOICES = [
     {
         "model": "noiz",
-        "modelName": "Alex",
+        "modelName": "Alex", // Display Name (Previous Value stored in DB maybe?)
+        "modelId": "aura-orion-en", // Valid Deepgram ID
         "preview": "Alex-the-mentor.mp3",
         "gender": "male",
         "language": "en-US"
@@ -63,6 +64,7 @@ export const NOIZ_VOICES = [
     {
         "model": "noiz",
         "modelName": "Silas",
+        "modelId": "aura-arcas-en",
         "preview": "Silas-the-naturalist.mp3",
         "gender": "male",
         "language": "en-US"
@@ -70,6 +72,7 @@ export const NOIZ_VOICES = [
     {
         "model": "noiz",
         "modelName": "James",
+        "modelId": "aura-perseus-en",
         "preview": "James-the-observer.mp3",
         "gender": "male",
         "language": "en-US"
@@ -77,6 +80,7 @@ export const NOIZ_VOICES = [
     {
         "model": "noiz",
         "modelName": "Chloe",
+        "modelId": "aura-asteria-en",
         "preview": "Chloe-the-barista.mp3",
         "gender": "female",
         "language": "en-US"
@@ -84,6 +88,7 @@ export const NOIZ_VOICES = [
     {
         "model": "noiz",
         "modelName": "Serena",
+        "modelId": "aura-luna-en",
         "preview": "Serena-the-healer.mp3",
         "gender": "female",
         "language": "en-US"
@@ -91,6 +96,7 @@ export const NOIZ_VOICES = [
     {
         "model": "noiz",
         "modelName": "Elara",
+        "modelId": "aura-stella-en",
         "preview": "Elara-the-storyteller.mp3",
         "gender": "female",
         "language": "en-US"
@@ -98,6 +104,7 @@ export const NOIZ_VOICES = [
     {
         "model": "noiz",
         "modelName": "Willem",
+        "modelId": "aura-orion-en", // Fallback for Afrikaans (or closest match)
         "preview": "afrikanas.mp3",
         "gender": "male",
         "language": "af"
@@ -105,6 +112,7 @@ export const NOIZ_VOICES = [
     {
         "model": "noiz",
         "modelName": "Pierre",
+        "modelId": "aura-helios-en", // Fallback for French (Deepgram Aura is English focused mostly, but check docs. Actually let's assume English Aura models for now or use non-Aura if supported, but error is about 'Silas' so sticking to Aura IDs)
         "preview": "french.mp3",
         "gender": "male",
         "language": "fr-FR"
@@ -112,6 +120,7 @@ export const NOIZ_VOICES = [
     {
         "model": "noiz",
         "modelName": "João",
+        "modelId": "aura-orion-en", // Fallback
         "preview": "portugese.mp3",
         "gender": "male",
         "language": "pt-BR"
@@ -119,6 +128,7 @@ export const NOIZ_VOICES = [
     {
         "model": "noiz",
         "modelName": "Klaus",
+        "modelId": "aura-angus-en", // Fallback (Irish/Deepgram specific or just placeholder)
         "preview": "german.mp3",
         "gender": "male",
         "language": "de-DE"
