@@ -11,7 +11,8 @@ import {
     Zap,
     User,
     LogOut,
-    Mountain
+    Mountain,
+    Palette
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -38,6 +39,11 @@ const sidebarItems = [
         title: "Billing",
         href: "/dashboard/billing",
         icon: CreditCard,
+    },
+    {
+        title: "Brand Kit",
+        href: "/dashboard/settings/brand-kit",
+        icon: Palette,
     },
     {
         title: "Settings",

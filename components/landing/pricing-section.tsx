@@ -66,6 +66,11 @@ export function PricingSection() {
                         </div>
                     ))}
                 </div>
+                <div className="mt-12 text-center text-sm text-muted-foreground max-w-2xl mx-auto">
+                    <p>
+                        * By purchasing a plan or credits, you acknowledge that API-based video generations are non-refundable once processing begins via our AI sub-processors (as per our <a href="/legal/terms-of-service" className="underline hover:text-primary">Terms of Service</a>).
+                    </p>
+                </div>
             </div>
         </section>
     )

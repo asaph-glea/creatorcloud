@@ -1,5 +1,6 @@
 import { inngest } from "@/inngest/client";
 import { createClient } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/nextjs";
 
 export const generateVideo = inngest.createFunction(
     { id: "generate-video" },
@@ -7,14 +8,15 @@ export const generateVideo = inngest.createFunction(
     async ({ event, step }) => {
         const { seriesId, customScript, customImageUrls } = event.data;
 
-        console.log("DEBUG: generateVideo function triggered!", {
+        Sentry.logger.info(Sentry.logger.fmt`DEBUG: generateVideo function triggered for series ${seriesId}`);
+        Sentry.logger.info("Function args", {
             seriesId,
             hasCustomScript: !!customScript,
             customImagesCount: customImageUrls?.length
         });
 
         try {
-            // Step 1: Fetch series data
+            // Step 1: Fetch series data and check AI consent
             const series = await step.run("fetch-series-data", async () => {
                 const supabase = createClient(
                     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,14 +25,26 @@ export const generateVideo = inngest.createFunction(
 
                 const { data, error } = await supabase
                     .from("series")
-                    .select("*")
+                    .select("*, users (ai_consent)")
                     .eq("id", seriesId)
                     .single();
 
                 if (error) throw new Error(`Failed to fetch series: ${error.message}`);
                 if (!data) throw new Error("Series not found");
 
-                return data;
+                // @ts-ignore - Supabase join typing
+                if (data.users && data.users.ai_consent === false) {
+                    throw new Error("AI Consent is required to generate videos. Please complete the onboarding process.");
+                }
+
+                // Fetch Brand Kit for the user
+                const { data: brandKit } = await supabase
+                    .from("brand_kits")
+                    .select("*")
+                    .eq("user_id", data.user_id)
+                    .single();
+
+                return { ...data, brandKit };
             });
 
             // Step 2: Generate Video Script
@@ -43,15 +57,23 @@ export const generateVideo = inngest.createFunction(
                     };
                 }
 
-                const { generateVideoScript } = await import("@/lib/gemini");
-                return await generateVideoScript({
-                    seriesName: series.series_name,
-                    nicheType: series.niche_type,
-                    selectedNiche: series.selected_niche,
-                    customNiche: series.custom_niche,
-                    videoStyle: series.video_style,
-                    videoDuration: series.video_duration,
-                });
+                return await Sentry.startSpan(
+                    {
+                        op: "ai.generation",
+                        name: "generate-video-script"
+                    },
+                    async () => {
+                        const { generateVideoScript } = await import("@/lib/gemini");
+                        return await generateVideoScript({
+                            seriesName: series.series_name,
+                            nicheType: series.niche_type,
+                            selectedNiche: series.selected_niche,
+                            customNiche: series.custom_niche,
+                            videoStyle: series.video_style,
+                            videoDuration: series.video_duration,
+                        });
+                    }
+                );
             });
 
             // Step 3 & 4: Generate Voice, Images, and Music in Parallel
@@ -127,12 +149,12 @@ export const generateVideo = inngest.createFunction(
                         }
                         prompt = String(prompt);
 
-                        console.log(`DEBUG: Generating image ${i} with prompt:`, prompt);
+                        Sentry.logger.debug(Sentry.logger.fmt`DEBUG: Generating image ${i} with prompt: ${prompt}`);
                         let imageBuffer: Buffer;
                         try {
                             imageBuffer = await generateImage({ prompt });
                         } catch (error: any) {
-                            console.error(`Error generating image ${i}:`, error.message);
+                            Sentry.logger.error("Error generating image", { index: i, error: error.message });
                             try {
                                 imageBuffer = await generateImage({ prompt: `A cinematic abstract background, safe for work, high quality.` });
                             } catch (fallbackError) {
@@ -230,7 +252,8 @@ export const generateVideo = inngest.createFunction(
                     imageUrls: images.imageUrls,
                     musicUrl: music.musicUrl,
                     captions: captions.captions,
-                    script: script.script
+                    script: script.script,
+                    brandKit: series.brandKit || null
                 };
 
                 const compositionId = "MyComp";
@@ -358,7 +381,8 @@ export const generateVideo = inngest.createFunction(
 
         } catch (error: any) {
             // Global Error Handler for the function
-            console.error("Workflow Failed:", error);
+            Sentry.captureException(error);
+            Sentry.logger.error("Workflow Failed", { error: error.message || error });
 
             // Attempt to update DB status to failed
             await step.run("handle-failure", async () => {

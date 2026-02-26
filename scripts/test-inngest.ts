@@ -15,7 +15,7 @@ if (fs.existsSync(envLocal)) {
 }
 
 // Force development mode for local testing
-process.env.NODE_ENV = 'development';
+// process.env.NODE_ENV = 'development';
 
 // Re-create client locally to avoid import issues if necessary, but trying import first
 // import { inngest } from '../inngest/client'; 

@@ -68,7 +68,7 @@ export async function generateVideoScript(params: GenerateScriptParams) {
 
         // @ts-ignore - The SDK types might be mismatching runtime or lint is confused, but usually it's a helper method or property.
         // Based on lint error: "This expression is not callable because it is a 'get' accessor"
-        const text = typeof result.text === 'function' ? result.text() : result.text;
+        const text = result.text;
 
         if (!text && result?.candidates?.length) {
             // Fallback to manual extraction if helper fails
@@ -97,7 +97,7 @@ export async function generateText(prompt: string): Promise<string> {
         });
 
         // Handle response extraction similar to above
-        const text = typeof result.text === 'function' ? result.text() : result.text;
+        const text = result.text;
 
         if (text) return text;
 

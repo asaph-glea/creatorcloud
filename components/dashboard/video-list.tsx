@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/utils/supabase/client";
+import * as Sentry from "@sentry/nextjs";
 
 interface Video {
     id: string;
@@ -33,6 +34,20 @@ export function VideoList({ initialVideos }: VideoListProps) {
     const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
     const supabase = createClient();
 
+    const handleVideoClick = (video: Video) => {
+        if (video.status === 'processing') return;
+
+        Sentry.startSpan(
+            { op: "ui.click", name: "Play Video" },
+            (span) => {
+                span.setAttribute("videoId", video.id);
+                span.setAttribute("seriesName", video.series?.series_name || "unknown");
+                setSelectedVideo(video);
+                Sentry.logger.info("Video playback started in modal", { videoId: video.id });
+            }
+        );
+    };
+
     // ... existing useEffects for polling
 
     return (
@@ -46,7 +61,7 @@ export function VideoList({ initialVideos }: VideoListProps) {
                         <Card
                             key={video.id}
                             className={`overflow-hidden group flex flex-col h-full hover:shadow-md transition-shadow cursor-pointer ${isProcessing ? 'opacity-80 pointer-events-none' : ''}`}
-                            onClick={() => !isProcessing && setSelectedVideo(video)}
+                            onClick={() => handleVideoClick(video)}
                         >
                             <div className="relative aspect-video w-full bg-muted">
                                 {isProcessing ? (

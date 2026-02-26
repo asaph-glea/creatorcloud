@@ -42,6 +42,12 @@ export default function GuidesPage() {
                         >
                             FAQ
                         </TabsTrigger>
+                        <TabsTrigger
+                            value="advanced"
+                            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground border bg-background px-4 py-2"
+                        >
+                            Advanced Features
+                        </TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -236,6 +242,80 @@ export default function GuidesPage() {
                     </Card>
                 </TabsContent>
 
+                {/* Advanced Features Tab */}
+                <TabsContent value="advanced" className="space-y-6 animate-in fade-in-50 duration-500">
+                    <div className="grid gap-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Video className="h-5 w-5 text-purple-500" />
+                                    Custom Video Creation
+                                </CardTitle>
+                                <CardDescription>
+                                    Create videos with your own scripts and images.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <h4 className="font-semibold text-sm">How it works</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        Navigate to any Series and click the <strong>Custom</strong> button (or "Create Custom Video" in the menu).
+                                        This allows you to:
+                                    </p>
+                                    <ul className="list-disc list-inside text-sm text-muted-foreground ml-2 space-y-1">
+                                        <li>Paste your own pre-written script.</li>
+                                        <li>Upload specific images you want to use.</li>
+                                        <li>Generate a unique video using the series' voice and style.</li>
+                                    </ul>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <div className="grid gap-6 md:grid-cols-2">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Zap className="h-5 w-5 text-yellow-500" />
+                                        Instant Generation
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <p className="text-sm text-muted-foreground">
+                                        Don't want to wait for the schedule?
+                                    </p>
+                                    <div className="p-4 bg-muted/50 rounded-lg">
+                                        <div className="font-semibold mb-2">⚡ Auto Generate</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Clicking this button on a Series Card immediately triggers the creation of a new video based on the series settings.
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <BookOpen className="h-5 w-5 text-blue-500" />
+                                        Precise Scheduling
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <p className="text-sm text-muted-foreground">
+                                        Control exactly when your content goes live.
+                                    </p>
+                                    <div className="p-4 bg-muted/50 rounded-lg">
+                                        <div className="font-semibold mb-2">Calendar Controls</div>
+                                        <p className="text-xs text-muted-foreground">
+                                            During series creation or editing, use the calendar to pick a specific start date and time.
+                                            The system will automatically prevent selecting past dates.
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+                </TabsContent>
+
                 {/* FAQ Tab */}
                 <TabsContent value="faq" className="space-y-6 animate-in fade-in-50 duration-500">
                     <Card>
@@ -259,7 +339,8 @@ export default function GuidesPage() {
                                 <AccordionItem value="item-3">
                                     <AccordionTrigger>Can I edit the script before generation?</AccordionTrigger>
                                     <AccordionContent>
-                                        Currently, the workflow is fully automated. We are working on a "Review Mode" feature.
+                                        Yes! You can use the <strong>Custom Video</strong> feature to input your own script directly.
+                                        For fully automated series, the AI writes the script for you based on your niche.
                                     </AccordionContent>
                                 </AccordionItem>
                                 <AccordionItem value="item-4">

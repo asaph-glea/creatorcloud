@@ -20,6 +20,7 @@
     "@remotion/lambda": "4.0.422",
     "@remotion/player": "4.0.422",
     "@remotion/renderer": "4.0.422",
+    "@sentry/nextjs": "^10.40.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.93.3",
     "class-variance-authority": "^0.7.1",

@@ -1,5 +1,6 @@
 import { inngest } from "@/inngest/client";
 import { createClient } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/nextjs";
 import { MUSIC_TRACKS } from "@/lib/constants";
 import fs from "fs";
 import path from "path";
@@ -25,7 +26,15 @@ export const publishWorkflow = inngest.createFunction(
 
                 if (error) throw new Error(error.message);
                 if (!data) throw new Error("Series not found");
-                return data;
+
+                // Fetch Brand Kit for the user
+                const { data: brandKit } = await supabase
+                    .from("brand_kits")
+                    .select("*")
+                    .eq("user_id", data.user_id)
+                    .single();
+
+                return { ...data, brandKit };
             });
 
             // Step 2: Generate Video Script (or use Custom)
@@ -38,15 +47,20 @@ export const publishWorkflow = inngest.createFunction(
                     };
                 }
 
-                const { generateVideoScript } = await import("@/lib/gemini");
-                return await generateVideoScript({
-                    seriesName: series.series_name,
-                    nicheType: series.niche_type,
-                    selectedNiche: series.selected_niche,
-                    customNiche: series.custom_niche,
-                    videoStyle: series.video_style,
-                    videoDuration: series.video_duration,
-                });
+                return await Sentry.startSpan(
+                    { op: "ai.generation", name: "generate-video-script-publish" },
+                    async () => {
+                        const { generateVideoScript } = await import("@/lib/gemini");
+                        return await generateVideoScript({
+                            seriesName: series.series_name,
+                            nicheType: series.niche_type,
+                            selectedNiche: series.selected_niche,
+                            customNiche: series.custom_niche,
+                            videoStyle: series.video_style,
+                            videoDuration: series.video_duration,
+                        });
+                    }
+                );
             });
 
             // Step 3: Prapare Audio (Voiceover + Music)
@@ -196,7 +210,8 @@ export const publishWorkflow = inngest.createFunction(
                     musicUrl: audioAssets.musicUrl,
                     imageUrls: images.imageUrls,
                     captions: captions.captions,
-                    script: script.script
+                    script: script.script,
+                    brandKit: series.brandKit || null
                 };
 
                 const compositionId = "MyComp";
@@ -469,7 +484,8 @@ export const publishWorkflow = inngest.createFunction(
         } catch (error: any) {
             // Ensure we always throw an Error object for Inngest serialization
             const normalizedError = error instanceof Error ? error : new Error(String(error));
-            console.error("Publish Workflow Failed:", normalizedError);
+            Sentry.captureException(normalizedError);
+            Sentry.logger.error("Publish Workflow Failed", { error: normalizedError.message });
             throw normalizedError;
         }
     }

@@ -11,6 +11,7 @@ import { Loader2, Upload, X, Image as ImageIcon, Video, CheckCircle2 } from "luc
 import { toast } from "sonner"
 import { createCustomVideo } from "@/app/actions/custom-actions"
 import Image from "next/image"
+import * as Sentry from "@sentry/nextjs"
 
 import { polishScript } from "@/app/actions/ai-actions"
 import { generatePreviewAudio } from "@/app/actions/custom-actions"
@@ -76,15 +77,24 @@ function CustomVideoForm() {
 
         setIsPolishing(true);
         try {
-            const result = await polishScript(script);
-            if (result.success && result.polishedScript) {
-                setScript(result.polishedScript);
-                toast.success("Script polished by AI!");
-            } else {
-                toast.error(result.error || "Failed to polish script");
-            }
-        } catch (err) {
+            await Sentry.startSpan(
+                { op: "ui.action", name: "Polish Custom Script" },
+                async (span) => {
+                    span.setAttribute("scriptLength", script.length);
+                    const result = await polishScript(script);
+                    if (result.success && result.polishedScript) {
+                        setScript(result.polishedScript);
+                        toast.success("Script polished by AI!");
+                        Sentry.logger.info("Custom script polished successfully");
+                    } else {
+                        toast.error(result.error || "Failed to polish script");
+                        Sentry.logger.warn("Script polish failed", { error: result.error });
+                    }
+                }
+            );
+        } catch (err: any) {
             toast.error("Something went wrong");
+            Sentry.captureException(err);
         } finally {
             setIsPolishing(false);
         }
@@ -97,15 +107,24 @@ function CustomVideoForm() {
         }
         setIsPreviewGenerating(true);
         try {
-            const result = await generatePreviewAudio(script);
-            if (result.success && result.audioUrl) {
-                setPreviewAudioUrl(result.audioUrl);
-                toast.success("Preview audio generated!");
-            } else {
-                toast.error(result.error || "Failed to generate audio");
-            }
-        } catch (err) {
+            await Sentry.startSpan(
+                { op: "ui.action", name: "Generate Preview Audio" },
+                async (span) => {
+                    span.setAttribute("scriptLength", script.length);
+                    const result = await generatePreviewAudio(script);
+                    if (result.success && result.audioUrl) {
+                        setPreviewAudioUrl(result.audioUrl);
+                        toast.success("Preview audio generated!");
+                        Sentry.logger.info("Preview audio generated");
+                    } else {
+                        toast.error(result.error || "Failed to generate audio");
+                        Sentry.logger.warn("Audio preview generation failed", { error: result.error });
+                    }
+                }
+            );
+        } catch (err: any) {
             toast.error("Something went wrong generating audio");
+            Sentry.captureException(err);
         } finally {
             setIsPreviewGenerating(false);
         }
@@ -113,7 +132,7 @@ function CustomVideoForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        console.log("DEBUG: handleSubmit called")
+        Sentry.logger.info("DEBUG: handleSubmit called for custom video")
 
         if (!script.trim()) {
             toast.error("Please write a script")
@@ -143,26 +162,37 @@ function CustomVideoForm() {
         setIsSubmitting(true)
 
         try {
-            const formData = new FormData()
-            formData.append("seriesId", seriesId)
-            formData.append("script", script)
+            await Sentry.startSpan(
+                { op: "ui.form_submit", name: "Submit Custom Video Form" },
+                async (span) => {
+                    span.setAttribute("seriesId", seriesId as string);
+                    span.setAttribute("imageCount", images.length);
+                    span.setAttribute("scriptLength", script.length);
 
-            images.forEach((image) => {
-                formData.append("images", image)
-            })
+                    const formData = new FormData()
+                    formData.append("seriesId", seriesId as string)
+                    formData.append("script", script)
 
-            const result = await createCustomVideo(formData)
-            console.log("DEBUG: Server Action Result:", result)
+                    images.forEach((image) => {
+                        formData.append("images", image)
+                    })
 
-            if (result.success) {
-                toast.success("Video creation started!")
-                router.push("/dashboard/videos")
-            } else {
-                toast.error(result.error || "Failed to create video")
-            }
-        } catch (error) {
+                    const result = await createCustomVideo(formData)
+                    Sentry.logger.info("DEBUG: Server Action Result", { success: result.success })
+
+                    if (result.success) {
+                        toast.success("Video creation started!")
+                        router.push("/dashboard/videos")
+                    } else {
+                        toast.error(result.error || "Failed to create video")
+                        Sentry.logger.error("Failed to create custom video", { error: result.error })
+                    }
+                }
+            );
+        } catch (error: any) {
             console.error(error)
             toast.error("An unexpected error occurred")
+            Sentry.captureException(error);
         } finally {
             setIsSubmitting(false)
         }

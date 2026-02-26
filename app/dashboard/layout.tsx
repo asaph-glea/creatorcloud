@@ -1,11 +1,20 @@
 import { Sidebar } from "@/components/dashboard/sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
+import { syncUser } from "@/utils/supabase/sync-user"
+import { redirect } from "next/navigation"
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
+    // Sync user and check AI consent before rendering any dashboard page
+    const user = await syncUser();
+
+    if (user && user.ai_consent === false) {
+        redirect("/onboarding");
+    }
+
     return (
         <div className="flex min-h-screen flex-col lg:flex-row">
             {/* Sidebar hidden on mobile for now, can add drawer later */}

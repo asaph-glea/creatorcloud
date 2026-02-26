@@ -15,6 +15,7 @@ import { CalendarIcon, Instagram, Loader2, Mail, Music2, Pin, Twitter, Youtube }
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
+import * as Sentry from "@sentry/nextjs"
 
 const iconMap = {
     Youtube: Youtube,
@@ -35,36 +36,46 @@ export function StepDetails() {
     const handleSchedule = async () => {
         setIsLoading(true)
         try {
-            // Prepare payload
-            // Note: File upload for customMusic is not implemented in this step yet
-            // You would typically upload the file to storage first and get a URL
-            const payload = {
-                ...data,
-                customMusic: undefined, // Don't send File object
-                customMusicUrl: null, // Placeholder for url
-            }
+            await Sentry.startSpan(
+                { op: "ui.action", name: data.id ? "Update Series" : "Schedule Series" },
+                async (span) => {
+                    span.setAttribute("seriesId", data.id || "new");
+                    span.setAttribute("platform", data.platform || "unknown");
 
-            const url = data.id ? "/api/series" : "/api/series/create" // PATCH on /api/series handles updates
-            const method = data.id ? "PATCH" : "POST"
+                    const payload = {
+                        ...data,
+                        customMusic: undefined,
+                        customMusicUrl: null,
+                    }
 
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
-            })
+                    const url = data.id ? "/api/series" : "/api/series/create"
+                    const method = data.id ? "PATCH" : "POST"
 
-            if (!response.ok) {
-                const error = await response.json()
-                throw new Error(error.error || "Failed to schedule series")
-            }
+                    Sentry.logger.info(Sentry.logger.fmt`Submitting series payload to ${url}`, { method });
 
-            toast.success(data.id ? "Series updated successfully!" : "Series scheduled successfully!")
-            router.push("/dashboard")
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(payload),
+                    })
+
+                    if (!response.ok) {
+                        const error = await response.json()
+                        Sentry.logger.error("Failed to submit series", { error })
+                        throw new Error(error.error || "Failed to schedule series")
+                    }
+
+                    toast.success(data.id ? "Series updated successfully!" : "Series scheduled successfully!")
+                    Sentry.logger.info("Series submitted successfully");
+                    router.push("/dashboard")
+                }
+            );
         } catch (error) {
             console.error("Error scheduling series:", error)
             toast.error(error instanceof Error ? error.message : "Something went wrong")
+            Sentry.captureException(error)
         } finally {
             setIsLoading(false)
         }

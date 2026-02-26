@@ -12,9 +12,14 @@ export interface CompositionProps {
     imageUrls: string[];
     captions: any[]; // Adjust type based on Deepgram output
     script?: string;
+    brandKit?: {
+        logo_url?: string | null;
+        primary_color?: string | null;
+        font_family?: string | null;
+    } | null;
 }
 
-export const MyComposition: React.FC<CompositionProps> = ({ audioUrl, musicUrl, imageUrls, captions }) => {
+export const MyComposition: React.FC<CompositionProps> = ({ audioUrl, musicUrl, imageUrls, captions, brandKit }) => {
     const { fps, durationInFrames } = useVideoConfig();
     const frame = useCurrentFrame();
 
@@ -96,10 +101,33 @@ export const MyComposition: React.FC<CompositionProps> = ({ audioUrl, musicUrl, 
 
             {/* Captions Layer */}
             <AbsoluteFill className="justify-end items-center pb-32">
-                <div className="text-white text-5xl font-bold text-center drop-shadow-md px-10 bg-black/50 p-4 rounded-xl">
+                <div
+                    className="text-white text-5xl font-bold text-center drop-shadow-md px-10 p-4 rounded-xl"
+                    style={{
+                        backgroundColor: brandKit && brandKit.primary_color ? `${brandKit.primary_color}CC` : 'rgba(0,0,0,0.5)',
+                        fontFamily: brandKit && brandKit.font_family ? brandKit.font_family : 'inherit'
+                    }}
+                >
                     {visibleCaptions.map((c: any) => c.word).join(' ')}
+                </div>
+            </AbsoluteFill>
+
+            {/* Brand Kit Logo */}
+            {brandKit && brandKit.logo_url && (
+                <AbsoluteFill className="justify-start items-end p-8 pointer-events-none">
+                    <Img
+                        src={brandKit.logo_url}
+                        style={{ width: '120px', height: '120px', objectFit: 'contain', opacity: 0.85 }}
+                    />
+                </AbsoluteFill>
+            )}
+
+            {/* AI-Generated Watermark (EU AI Act Compliance) */}
+            <AbsoluteFill className="justify-start items-end p-6 pointer-events-none">
+                <div className="text-white/50 text-xl font-medium tracking-wider drop-shadow-md bg-black/20 px-3 py-1 rounded-md">
+                    AI-Generated Content
                 </div>
             </AbsoluteFill>
         </AbsoluteFill>
     );
-};
+}
